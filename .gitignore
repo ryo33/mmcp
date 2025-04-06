@@ -1,0 +1,15 @@
+*
+!*/
+!.gitignore
+
+/target
+
+!crates/**/*.rs
+!Cargo.toml
+!Cargo.lock
+
+!schemas/*.json
+
+!README.md
+
+!.vscode/settings.json

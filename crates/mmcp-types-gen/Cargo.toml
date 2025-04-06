@@ -1,0 +1,15 @@
+[package]
+name = "mmcp-types-gen"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+prettyplease = "0.2.32"
+syn = "2.0"
+serde_json = { workspace = true, features = ["preserve_order"] }
+serde = { workspace = true, features = ["derive"] }
+proc-macro2 = "1.0"
+quote = "1.0"
+convert_case = "0.8.0"
+indexmap = { version = "2.9.0", features = ["serde"] }

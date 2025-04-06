@@ -1,0 +1,18 @@
+[package]
+name = "mmcp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["raw_value"] }
+monostate = "0.1"
+serde_with = { version = "3.12", features = ["base64"] }
+schemars1 = { workspace = true, optional = true }
+schemars08 = { workspace = true, optional = true }
+indexmap = { version = "2.9", features = ["serde"] }
+
+[features]
+default = ["schemars1"]
+schemars1 = ["dep:schemars1"]
+schemars08 = ["dep:schemars08"]
