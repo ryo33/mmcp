@@ -172,10 +172,13 @@ impl TypeGeneratorConfig {
             })
             .collect::<Vec<_>>();
 
+        let default = schema.required.is_empty();
+
         TypeDef::Struct(StructDef {
             name: name.to_string(),
             description: schema.shared.description.clone(),
             fields,
+            default,
             additional_parameters: schema
                 .additional_properties
                 .wildcard_type_ref(&self.root_schema),
@@ -452,9 +455,15 @@ fn generate_struct(struct_def: &StructDef) -> TokenStream {
         quote! {}
     };
 
+    let derives = if struct_def.default {
+        quote!(#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)])
+    } else {
+        quote!(#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)])
+    };
+
     quote! {
         #[doc = #doc_comment]
-        #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+        #derives
         #(#container_attrs)*
         #deny_unknown_fields
         pub struct #name_ident {

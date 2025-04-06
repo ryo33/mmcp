@@ -1,5 +1,5 @@
 ///Optional annotations for the client. The client can use annotations to inform how objects are used or displayed
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct Annotations {
     /**Describes who the intended customer of this object or data is.
 
@@ -145,7 +145,7 @@ pub struct CancelledNotification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the client supports listing roots.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ClientCapabilitiesRoots {
     ///Whether the client supports notifications for changes to the roots list.
     #[serde(rename = "listChanged")]
@@ -156,7 +156,7 @@ pub struct ClientCapabilitiesRoots {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Capabilities a client may support. Known capabilities are defined here, in this schema, but this is not a closed set: any client can define its own, additional capabilities.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ClientCapabilities {
     ///Experimental, non-standard capabilities that the client supports.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -520,7 +520,7 @@ This can be used by clients to improve the LLM's understanding of available tool
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for InitializedNotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct InitializedNotificationParams {
     ///This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     #[serde(rename = "_meta")]
@@ -608,7 +608,7 @@ pub enum JSONRPCMessage {
     JSONRPCBatchResponse(JSONRPCBatchResponse),
 }
 ///Generated from JSON schema definition for JsonrpcNotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct JsonrpcNotificationParams {
     ///This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     #[serde(rename = "_meta")]
@@ -630,7 +630,7 @@ pub struct JSONRPCNotification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for JsonrpcRequestParamsMeta
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct JsonrpcRequestParamsMeta {
     ///If specified, the caller is requesting out-of-band progress notifications for this request (as represented by notifications/progress). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
     #[serde(rename = "progressToken")]
@@ -641,7 +641,7 @@ pub struct JsonrpcRequestParamsMeta {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for JsonrpcRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct JsonrpcRequestParams {
     #[serde(rename = "_meta")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -673,7 +673,7 @@ pub struct JSONRPCResponse {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListPromptsRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ListPromptsRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -711,7 +711,7 @@ If present, there may be more results available.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListResourceTemplatesRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ListResourceTemplatesRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -750,7 +750,7 @@ If present, there may be more results available.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListResourcesRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ListResourcesRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -788,7 +788,7 @@ If present, there may be more results available.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListRootsRequestParamsMeta
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ListRootsRequestParamsMeta {
     ///If specified, the caller is requesting out-of-band progress notifications for this request (as represented by notifications/progress). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
     #[serde(rename = "progressToken")]
@@ -799,7 +799,7 @@ pub struct ListRootsRequestParamsMeta {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListRootsRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ListRootsRequestParams {
     #[serde(rename = "_meta")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -839,7 +839,7 @@ pub struct ListRootsResult {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListToolsRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ListToolsRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -926,7 +926,7 @@ pub struct LoggingMessageNotification {
 
 Keys not declared here are currently left unspecified by the spec and are up
 to the client to interpret.*/
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ModelHint {
     /**A hint for a model name.
 
@@ -954,7 +954,7 @@ dimensions to help clients make an appropriate selection for their use case.
 These preferences are always advisory. The client MAY ignore them. It is also
 up to the client to decide how to interpret these preferences and how to
 balance them against other considerations.*/
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ModelPreferences {
     /**How much to prioritize cost when selecting a model. A value of 0 means cost
 is not important, while a value of 1 means cost is the most important
@@ -988,7 +988,7 @@ the most important factor.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for NotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct NotificationParams {
     ///This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     #[serde(rename = "_meta")]
@@ -1009,7 +1009,7 @@ pub struct Notification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for PaginatedRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct PaginatedRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -1030,7 +1030,7 @@ pub struct PaginatedRequest {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for PaginatedResult
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct PaginatedResult {
     ///This result property is reserved by the protocol to allow clients and servers to attach additional metadata to their responses.
     #[serde(rename = "_meta")]
@@ -1046,7 +1046,7 @@ If present, there may be more results available.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for PingRequestParamsMeta
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct PingRequestParamsMeta {
     ///If specified, the caller is requesting out-of-band progress notifications for this request (as represented by notifications/progress). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
     #[serde(rename = "progressToken")]
@@ -1057,7 +1057,7 @@ pub struct PingRequestParamsMeta {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for PingRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct PingRequestParams {
     #[serde(rename = "_meta")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1141,7 +1141,7 @@ pub struct PromptArgument {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for PromptListChangedNotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct PromptListChangedNotificationParams {
     ///This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     #[serde(rename = "_meta")]
@@ -1237,7 +1237,7 @@ pub struct ReadResourceResult {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for RequestParamsMeta
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct RequestParamsMeta {
     ///If specified, the caller is requesting out-of-band progress notifications for this request (as represented by notifications/progress). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
     #[serde(rename = "progressToken")]
@@ -1248,7 +1248,7 @@ pub struct RequestParamsMeta {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for RequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct RequestParams {
     #[serde(rename = "_meta")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1313,7 +1313,7 @@ pub struct ResourceContents {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ResourceListChangedNotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ResourceListChangedNotificationParams {
     ///This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     #[serde(rename = "_meta")]
@@ -1388,7 +1388,7 @@ pub struct ResourceUpdatedNotification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for Result
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct Result {
     ///This result property is reserved by the protocol to allow clients and servers to attach additional metadata to their responses.
     #[serde(rename = "_meta")]
@@ -1423,7 +1423,7 @@ other URI schemes.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for RootsListChangedNotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct RootsListChangedNotificationParams {
     ///This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     #[serde(rename = "_meta")]
@@ -1466,7 +1466,7 @@ pub struct SamplingMessage {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the server offers any prompt templates.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ServerCapabilitiesPrompts {
     ///Whether this server supports notifications for changes to the prompt list.
     #[serde(rename = "listChanged")]
@@ -1477,7 +1477,7 @@ pub struct ServerCapabilitiesPrompts {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the server offers any resources to read.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ServerCapabilitiesResources {
     ///Whether this server supports notifications for changes to the resource list.
     #[serde(rename = "listChanged")]
@@ -1491,7 +1491,7 @@ pub struct ServerCapabilitiesResources {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the server offers any tools to call.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ServerCapabilitiesTools {
     ///Whether this server supports notifications for changes to the tool list.
     #[serde(rename = "listChanged")]
@@ -1502,7 +1502,7 @@ pub struct ServerCapabilitiesTools {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Capabilities that a server may support. Known capabilities are defined here, in this schema, but this is not a closed set: any server can define its own, additional capabilities.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ServerCapabilities {
     ///Present if the server supports argument autocompletion suggestions.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1707,7 +1707,7 @@ tool behavior (including descriptive properties like `title`).
 
 Clients should never make tool use decisions based on ToolAnnotations
 received from untrusted servers.*/
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ToolAnnotations {
     /**If true, the tool may perform destructive updates to its environment.
 If false, the tool performs only additive updates.
@@ -1750,7 +1750,7 @@ Default: false*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ToolListChangedNotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct ToolListChangedNotificationParams {
     ///This parameter name is reserved by MCP to allow clients and servers to attach additional metadata to their notifications.
     #[serde(rename = "_meta")]
