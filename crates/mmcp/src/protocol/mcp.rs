@@ -75,9 +75,16 @@ pub struct CallToolRequest {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum CallToolResultContent {
+    ///Text provided to or from an LLM.
     TextContent(TextContent),
+    ///An image provided to or from an LLM.
     ImageContent(ImageContent),
+    ///Audio provided to or from an LLM.
     AudioContent(AudioContent),
+    /**The contents of a resource, embedded into a prompt or tool call result.
+
+It is up to the client how best to render embedded resources for the benefit
+of the LLM and/or the user.*/
     EmbeddedResource(EmbeddedResource),
 }
 /**The server's response to a tool call.
@@ -170,26 +177,50 @@ pub struct ClientCapabilities {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum ClientNotification {
+    /**This notification can be sent by either side to indicate that it is cancelling a previously-issued request.
+
+The request SHOULD still be in-flight, but due to communication latency, it is always possible that this notification MAY arrive after the request has already finished.
+
+This notification indicates that the result will be unused, so any associated processing SHOULD cease.
+
+A client MUST NOT attempt to cancel its `initialize` request.*/
     CancelledNotification(CancelledNotification),
+    ///This notification is sent from the client to the server after initialization has finished.
     InitializedNotification(InitializedNotification),
+    ///An out-of-band notification used to inform the receiver of a progress update for a long-running request.
     ProgressNotification(ProgressNotification),
+    /**A notification from the client to the server, informing it that the list of roots has changed.
+This notification should be sent whenever the client adds, removes, or modifies any root.
+The server should then request an updated list of roots using the ListRootsRequest.*/
     RootsListChangedNotification(RootsListChangedNotification),
 }
 ///Generated from JSON schema definition for ClientRequest
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum ClientRequest {
+    ///This request is sent from the client to the server when it first connects, asking it to begin initialization.
     InitializeRequest(InitializeRequest),
+    ///A ping, issued by either the server or the client, to check that the other party is still alive. The receiver must promptly respond, or else may be disconnected.
     PingRequest(PingRequest),
+    ///Sent from the client to request a list of resources the server has.
     ListResourcesRequest(ListResourcesRequest),
+    ///Sent from the client to the server, to read a specific resource URI.
     ReadResourceRequest(ReadResourceRequest),
+    ///Sent from the client to request resources/updated notifications from the server whenever a particular resource changes.
     SubscribeRequest(SubscribeRequest),
+    ///Sent from the client to request cancellation of resources/updated notifications from the server. This should follow a previous resources/subscribe request.
     UnsubscribeRequest(UnsubscribeRequest),
+    ///Sent from the client to request a list of prompts and prompt templates the server has.
     ListPromptsRequest(ListPromptsRequest),
+    ///Used by the client to get a prompt provided by the server.
     GetPromptRequest(GetPromptRequest),
+    ///Sent from the client to request a list of tools the server has.
     ListToolsRequest(ListToolsRequest),
+    ///Used by the client to invoke a tool provided by the server.
     CallToolRequest(CallToolRequest),
+    ///A request from the client to the server, to enable or adjust logging.
     SetLevelRequest(SetLevelRequest),
+    ///A request from the client to the server, to ask for completion options.
     CompleteRequest(CompleteRequest),
 }
 ///Generated from JSON schema definition for ClientResult
@@ -197,7 +228,11 @@ pub enum ClientRequest {
 #[serde(untagged)]
 pub enum ClientResult {
     Result(Result),
+    ///The client's response to a sampling/create_message request from the server. The client should inform the user before returning the sampled message, to allow them to inspect the response (human in the loop) and decide whether to allow the server to see it.
     CreateMessageResult(CreateMessageResult),
+    /**The client's response to a roots/list request from the server.
+This result contains an array of Root objects, each representing a root directory
+or file that the server can operate on.*/
     ListRootsResult(ListRootsResult),
 }
 ///The argument's information
@@ -215,7 +250,9 @@ pub struct CompleteRequestParamsArgument {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum CompleteRequestParamsRef {
+    ///Identifies a prompt.
     PromptReference(PromptReference),
+    ///A reference to a resource or resource template definition.
     ResourceReference(ResourceReference),
 }
 ///Generated from JSON schema definition for CompleteRequestParams
@@ -319,8 +356,11 @@ pub struct CreateMessageRequest {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum CreateMessageResultContent {
+    ///Text provided to or from an LLM.
     TextContent(TextContent),
+    ///An image provided to or from an LLM.
     ImageContent(ImageContent),
+    ///Audio provided to or from an LLM.
     AudioContent(AudioContent),
 }
 ///The client's response to a sampling/create_message request from the server. The client should inform the user before returning the sampled message, to allow them to inspect the response (human in the loop) and decide whether to allow the server to see it.
@@ -504,7 +544,9 @@ pub struct InitializedNotification {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum JsonrpcBatchRequestItem {
+    ///A request that expects a response.
     JSONRPCRequest(JSONRPCRequest),
+    ///A notification which does not expect a response.
     JSONRPCNotification(JSONRPCNotification),
 }
 ///A JSON-RPC batch request, as described in https://www.jsonrpc.org/specification#batch.
@@ -515,7 +557,9 @@ pub struct JSONRPCBatchRequest(pub Vec<JsonrpcBatchRequestItem>);
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum JsonrpcBatchResponseItem {
+    ///A successful (non-error) response to a request.
     JSONRPCResponse(JSONRPCResponse),
+    ///A response to a request that indicates an error occurred.
     JSONRPCError(JSONRPCError),
 }
 ///A JSON-RPC batch response, as described in https://www.jsonrpc.org/specification#batch.
@@ -550,11 +594,17 @@ pub struct JSONRPCError {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum JSONRPCMessage {
+    ///A request that expects a response.
     JSONRPCRequest(JSONRPCRequest),
+    ///A notification which does not expect a response.
     JSONRPCNotification(JSONRPCNotification),
+    ///A JSON-RPC batch request, as described in https://www.jsonrpc.org/specification#batch.
     JSONRPCBatchRequest(JSONRPCBatchRequest),
+    ///A successful (non-error) response to a request.
     JSONRPCResponse(JSONRPCResponse),
+    ///A response to a request that indicates an error occurred.
     JSONRPCError(JSONRPCError),
+    ///A JSON-RPC batch response, as described in https://www.jsonrpc.org/specification#batch.
     JSONRPCBatchResponse(JSONRPCBatchResponse),
 }
 ///Generated from JSON schema definition for JsonrpcNotificationParams
@@ -1115,9 +1165,16 @@ pub struct PromptListChangedNotification {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum PromptMessageContent {
+    ///Text provided to or from an LLM.
     TextContent(TextContent),
+    ///An image provided to or from an LLM.
     ImageContent(ImageContent),
+    ///Audio provided to or from an LLM.
     AudioContent(AudioContent),
+    /**The contents of a resource, embedded into a prompt or tool call result.
+
+It is up to the client how best to render embedded resources for the benefit
+of the LLM and/or the user.*/
     EmbeddedResource(EmbeddedResource),
 }
 /**Describes a message returned as part of a prompt.
@@ -1392,8 +1449,11 @@ pub struct RootsListChangedNotification {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum SamplingMessageContent {
+    ///Text provided to or from an LLM.
     TextContent(TextContent),
+    ///An image provided to or from an LLM.
     ImageContent(ImageContent),
+    ///Audio provided to or from an LLM.
     AudioContent(AudioContent),
 }
 ///Describes a message issued to or received from an LLM API.
@@ -1472,20 +1532,42 @@ pub struct ServerCapabilities {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum ServerNotification {
+    /**This notification can be sent by either side to indicate that it is cancelling a previously-issued request.
+
+The request SHOULD still be in-flight, but due to communication latency, it is always possible that this notification MAY arrive after the request has already finished.
+
+This notification indicates that the result will be unused, so any associated processing SHOULD cease.
+
+A client MUST NOT attempt to cancel its `initialize` request.*/
     CancelledNotification(CancelledNotification),
+    ///An out-of-band notification used to inform the receiver of a progress update for a long-running request.
     ProgressNotification(ProgressNotification),
+    ///An optional notification from the server to the client, informing it that the list of resources it can read from has changed. This may be issued by servers without any previous subscription from the client.
     ResourceListChangedNotification(ResourceListChangedNotification),
+    ///A notification from the server to the client, informing it that a resource has changed and may need to be read again. This should only be sent if the client previously sent a resources/subscribe request.
     ResourceUpdatedNotification(ResourceUpdatedNotification),
+    ///An optional notification from the server to the client, informing it that the list of prompts it offers has changed. This may be issued by servers without any previous subscription from the client.
     PromptListChangedNotification(PromptListChangedNotification),
+    ///An optional notification from the server to the client, informing it that the list of tools it offers has changed. This may be issued by servers without any previous subscription from the client.
     ToolListChangedNotification(ToolListChangedNotification),
+    ///Notification of a log message passed from server to client. If no logging/setLevel request has been sent from the client, the server MAY decide which messages to send automatically.
     LoggingMessageNotification(LoggingMessageNotification),
 }
 ///Generated from JSON schema definition for ServerRequest
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum ServerRequest {
+    ///A ping, issued by either the server or the client, to check that the other party is still alive. The receiver must promptly respond, or else may be disconnected.
     PingRequest(PingRequest),
+    ///A request from the server to sample an LLM via the client. The client has full discretion over which model to select. The client should also inform the user before beginning sampling, to allow them to inspect the request (human in the loop) and decide whether to approve it.
     CreateMessageRequest(CreateMessageRequest),
+    /**Sent from the server to request a list of root URIs from the client. Roots allow
+servers to ask for specific directories or files to operate on. A common example
+for roots is providing a set of repositories or directories a server should operate
+on.
+
+This request is typically used when the server needs to understand the file system
+structure or access specific locations that the client has permission to read from.*/
     ListRootsRequest(ListRootsRequest),
 }
 ///Generated from JSON schema definition for ServerResult
@@ -1493,13 +1575,30 @@ pub enum ServerRequest {
 #[serde(untagged)]
 pub enum ServerResult {
     Result(Result),
+    ///After receiving an initialize request from the client, the server sends this response.
     InitializeResult(InitializeResult),
+    ///The server's response to a resources/list request from the client.
     ListResourcesResult(ListResourcesResult),
+    ///The server's response to a resources/read request from the client.
     ReadResourceResult(ReadResourceResult),
+    ///The server's response to a prompts/list request from the client.
     ListPromptsResult(ListPromptsResult),
+    ///The server's response to a prompts/get request from the client.
     GetPromptResult(GetPromptResult),
+    ///The server's response to a tools/list request from the client.
     ListToolsResult(ListToolsResult),
+    /**The server's response to a tool call.
+
+Any errors that originate from the tool SHOULD be reported inside the result
+object, with `isError` set to true, _not_ as an MCP protocol-level error
+response. Otherwise, the LLM would not be able to see that an error occurred
+and self-correct.
+
+However, any errors in _finding_ the tool, an error indicating that the
+server does not support tool calls, or any other exceptional conditions,
+should be reported as an MCP error response.*/
     CallToolResult(CallToolResult),
+    ///The server's response to a completion/complete request
     CompleteResult(CompleteResult),
 }
 ///Generated from JSON schema definition for SetLevelRequestParams

@@ -103,7 +103,7 @@ impl TypeGeneratorConfig {
 
                     VariantDef {
                         name: type_ref.variant_name(),
-                        description: None,
+                        description: self.root_schema.get_description(&type_ref.variant_name()),
                         rename: None,
                         ty: Some(type_ref),
                     }

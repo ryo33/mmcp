@@ -2,6 +2,8 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::collections::HashMap;
 
+use crate::json_schema::RootSchema;
+
 #[derive(Default, Clone)]
 pub struct TypeRegistry {
     types: HashMap<String, TypeDef>,
@@ -101,6 +103,13 @@ impl TypeRef {
         match self {
             TypeRef::Bytes => quote!(#[serde_as(as = "Base64")]),
             _ => quote! {},
+        }
+    }
+
+    pub fn get_description(&self, root_schema: &RootSchema) -> Option<String> {
+        match self {
+            TypeRef::Ref(name) => root_schema.get_description(name),
+            _ => None,
         }
     }
 }

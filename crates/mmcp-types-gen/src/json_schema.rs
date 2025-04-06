@@ -7,6 +7,13 @@ use crate::type_registry::TypeRef;
 pub struct RootSchema {
     pub definitions: IndexMap<String, Schema>,
 }
+impl RootSchema {
+    pub(crate) fn get_description(&self, name: &str) -> Option<String> {
+        self.definitions
+            .get(name)
+            .and_then(|schema| schema.get_description())
+    }
+}
 
 #[derive(Deserialize, PartialEq, Debug, Clone)]
 #[serde(untagged)]
