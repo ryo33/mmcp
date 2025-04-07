@@ -1,10 +1,7 @@
 use futures::{StreamExt, TryStreamExt};
-use mmcp::{
-    port::{RPCPort, RPCPortError},
-    protocol::mcp::JSONRPCMessage,
-    serde_json,
-    server::MCPServer,
-};
+use mmcp_protocol::mcp::{JSONRPCMessage, RPCPort, RPCPortError};
+use mmcp_server::MCPServer;
+use serde::{Serialize, de::DeserializeOwned};
 use tokio::io::AsyncBufReadExt;
 use tokio_stream::wrappers::LinesStream;
 
@@ -30,9 +27,9 @@ pub struct StdioAdapter {
 }
 
 impl RPCPort for StdioAdapter {
-    async fn wait_for_request<T: mmcp::serde::de::DeserializeOwned + Send>(
+    async fn wait_for_request<T: DeserializeOwned + Send>(
         &mut self,
-    ) -> anyhow::Result<mmcp::port::TypedRequest<T>> {
+    ) -> anyhow::Result<mmcp_rpc::port::TypedRequest<T>> {
         while let Some(message) = self.rx.next().await {
             match message {
                 Ok(message) => {
@@ -46,34 +43,32 @@ impl RPCPort for StdioAdapter {
         Err(RPCPortError::StreamClosed.into())
     }
 
-    async fn wait_for_notification<T: mmcp::serde::de::DeserializeOwned + Send>(
+    async fn wait_for_notification<T: DeserializeOwned + Send>(
         &mut self,
     ) -> anyhow::Result<mmcp::port::TypedNotification<T>> {
         todo!()
     }
 
-    async fn send_response<T: mmcp::serde::Serialize + Send>(
+    async fn respond<T: Serialize + Send>(
         &self,
-        response: mmcp::port::TypedResponse<T>,
+        response: mmcp_rpc::port::TypedResponse<T>,
     ) -> anyhow::Result<()> {
         todo!()
     }
 
-    async fn send_notification<T: mmcp::serde::Serialize + Send>(
+    async fn send_notification<T: Serialize + Send>(
         &self,
-        notification: mmcp::port::TypedNotification<T>,
+        notification: mmcp_rpc::port::TypedNotification<T>,
     ) -> anyhow::Result<()> {
         todo!()
     }
 
-    async fn request<
-        T: mmcp::serde::Serialize + Send,
-        R: mmcp::serde::de::DeserializeOwned + Send,
-    >(
+    async fn request<T: Serialize + Send, R: DeserializeOwned + Send>(
         &self,
-        request: mmcp::port::TypedRequest<T>,
-    ) -> anyhow::Result<Result<mmcp::port::TypedResponse<R>, mmcp::protocol::mcp::JSONRPCError>>
-    {
+        request: mmcp_rpc::port::TypedRequest<T>,
+    ) -> anyhow::Result<
+        Result<mmcp_rpc::port::TypedResponse<R>, mmcp_rpc::protocol::mcp::JSONRPCError>,
+    > {
         todo!()
     }
 
@@ -87,7 +82,7 @@ impl RPCPort for StdioAdapter {
 
     async fn send_message(
         &self,
-        message: mmcp::protocol::mcp::JSONRPCMessage,
+        message: mmcp_rpc::protocol::mcp::JSONRPCMessage,
     ) -> anyhow::Result<()> {
         todo!()
     }

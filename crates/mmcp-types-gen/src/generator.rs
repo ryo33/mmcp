@@ -315,7 +315,7 @@ impl TypeGeneratorConfig {
 
         quote! {
             #![cfg_attr(rustfmt, rustfmt_skip)]
-            #[expect(clippy::large_enum_variant)]
+            #![expect(clippy::large_enum_variant)]
             #(#definitions)*
         }
     }
@@ -362,15 +362,25 @@ fn generate_enum(enum_def: &EnumDef) -> TokenStream {
         quote! {}
     };
 
-    let derive = if enum_def.variants.iter().all(|v| v.ty.is_none()) {
-        quote! { #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)] }
-    } else {
-        quote! { #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)] }
-    };
+    let mut additional_derive = vec![];
+    if enum_def
+        .variants
+        .iter()
+        .all(|v| v.ty.as_ref().is_none_or(TypeRef::is_eq_compatible))
+    {
+        additional_derive.push(quote!(Eq));
+    }
+    if enum_def
+        .variants
+        .iter()
+        .all(|v| v.ty.as_ref().is_none_or(TypeRef::is_hash))
+    {
+        additional_derive.push(quote!(Hash));
+    }
 
     quote! {
         #[doc = #doc_comment]
-        #derive
+        #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize #(,#additional_derive)*)]
         #untagged
         pub enum #name_ident {
             #(#variants_tokens)*
@@ -457,15 +467,20 @@ fn generate_struct(struct_def: &StructDef) -> TokenStream {
         quote! {}
     };
 
-    let derives = if struct_def.default {
-        quote!(#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)])
-    } else {
-        quote!(#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)])
-    };
+    let mut additional_derive = vec![];
+    if struct_def.fields.iter().all(|f| f.ty.is_eq_compatible()) {
+        additional_derive.push(quote!(Eq));
+    }
+    if struct_def.fields.iter().all(|f| f.ty.is_hash()) {
+        additional_derive.push(quote!(Hash));
+    }
+    if struct_def.default {
+        additional_derive.push(quote!(Default));
+    }
 
     quote! {
         #[doc = #doc_comment]
-        #derives
+        #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize #(,#additional_derive)*)]
         #(#container_attrs)*
         #deny_unknown_fields
         pub struct #name_ident {
@@ -502,9 +517,17 @@ fn generate_newtype(newtype_def: &NewTypeDef) -> TokenStream {
     // Check if the inner type requires special field attributes
     let field_attr = newtype_def.inner_type.field_attr();
 
+    let mut additional_derive = vec![];
+    if newtype_def.inner_type.is_eq_compatible() {
+        additional_derive.push(quote!(Eq));
+    }
+    if newtype_def.inner_type.is_hash() {
+        additional_derive.push(quote!(Hash));
+    }
+
     quote! {
         #[doc = #doc_comment]
-        #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+        #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize #(,#additional_derive)*)]
         #container_attr
         #transparent_attr
         pub struct #name_ident(

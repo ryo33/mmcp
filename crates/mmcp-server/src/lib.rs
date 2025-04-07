@@ -1,15 +1,18 @@
+pub mod inventory;
 pub mod primitives;
 
 use std::{borrow::Cow, collections::HashMap};
 
 use crate::{
     inventory::ToolRegistration,
-    port::{RPCPort, TypedResponse},
     primitives::tool::{BoxedTool, Tool},
-    protocol::mcp::{
+};
+use mmcp_protocol::{
+    mcp::{
         Implementation, InitializeRequest, InitializeResult, InitializedNotification,
-        ServerCapabilities, ServerCapabilitiesTools,
+        JSONRPCMessage, ServerCapabilities, ServerCapabilitiesTools,
     },
+    port::{RPCMessageHandler, RPCPort},
 };
 
 pub struct MCPServer {
@@ -17,7 +20,6 @@ pub struct MCPServer {
     version: String,
     tools: HashMap<Cow<'static, str>, BoxedTool>,
     instructions: Option<String>,
-    initialized: bool,
 }
 
 impl MCPServer {
@@ -27,7 +29,6 @@ impl MCPServer {
             version: version.into(),
             tools: HashMap::new(),
             instructions: None,
-            initialized: false,
         }
     }
 
@@ -57,34 +58,42 @@ impl MCPServer {
         self
     }
 
-    pub async fn start(&mut self, port: &mut impl RPCPort) -> anyhow::Result<()> {
-        let request = port.wait_for_request::<InitializeRequest>().await?;
-        let response = TypedResponse {
-            id: request.id,
-            result: InitializeResult {
-                meta: None,
-                capabilities: ServerCapabilities {
-                    tools: Some(ServerCapabilitiesTools {
-                        list_changed: Some(true),
-                        extra: Default::default(),
-                    }),
-                    ..Default::default()
-                },
-                instructions: self.instructions.clone(),
-                protocol_version: "2025-03-26".to_string(),
-                server_info: Implementation {
-                    name: self.name.clone(),
-                    version: self.version.clone(),
+    pub fn handler(&self) -> impl RPCMessageHandler {
+        self
+    }
+
+    pub async fn start(&self, port: impl RPCPort) -> anyhow::Result<()> {
+        let (id, _request) = port
+            .wait_for_request::<InitializeRequest>("initialize")
+            .await?;
+        let response = InitializeResult {
+            meta: None,
+            capabilities: ServerCapabilities {
+                tools: Some(ServerCapabilitiesTools {
+                    list_changed: Some(true),
                     extra: Default::default(),
-                },
+                }),
+                ..Default::default()
+            },
+            instructions: self.instructions.clone(),
+            protocol_version: "2025-03-26".to_string(),
+            server_info: Implementation {
+                name: self.name.clone(),
+                version: self.version.clone(),
                 extra: Default::default(),
             },
             extra: Default::default(),
         };
-        port.send_response(response).await?;
-        port.wait_for_notification::<InitializedNotification>()
+        port.send_response(id, response).await?;
+        port.wait_for_notification::<InitializedNotification>("notifications/initialized")
             .await?;
-        self.initialized = true;
+        Ok(())
+    }
+}
+
+impl RPCMessageHandler for &MCPServer {
+    async fn handle_message(&self, message: JSONRPCMessage) -> anyhow::Result<()> {
+        // match message {
         Ok(())
     }
 }

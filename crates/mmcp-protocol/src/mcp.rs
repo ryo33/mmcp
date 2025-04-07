@@ -1,5 +1,5 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
-#[expect(clippy::large_enum_variant)]
+#![expect(clippy::large_enum_variant)]
 ///Optional annotations for the client. The client can use annotations to inform how objects are used or displayed
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct Annotations {
@@ -147,7 +147,16 @@ pub struct CancelledNotification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the client supports listing roots.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ClientCapabilitiesRoots {
     ///Whether the client supports notifications for changes to the roots list.
     #[serde(rename = "listChanged")]
@@ -238,7 +247,7 @@ or file that the server can operate on.*/
     ListRootsResult(ListRootsResult),
 }
 ///The argument's information
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct CompleteRequestParamsArgument {
     ///The name of the argument
     pub name: String,
@@ -305,7 +314,7 @@ pub struct CompleteResult {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///A request to include context from one or more MCP servers (including the caller), to be attached to the prompt. The client MAY ignore this request.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub enum CreateMessageRequestParamsIncludeContext {
     #[serde(rename = "allServers")]
     AllServers,
@@ -385,7 +394,7 @@ pub struct CreateMessageResult {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///An opaque token used to represent a cursor for pagination.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 #[serde(transparent)]
 pub struct Cursor(pub String);
 ///Generated from JSON schema definition for EmbeddedResourceResource
@@ -469,7 +478,7 @@ pub struct ImageContent {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Describes the name and version of an MCP implementation.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct Implementation {
     pub name: String,
     pub version: String,
@@ -675,7 +684,16 @@ pub struct JSONRPCResponse {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListPromptsRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ListPromptsRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -713,7 +731,16 @@ If present, there may be more results available.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListResourceTemplatesRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ListResourceTemplatesRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -752,7 +779,16 @@ If present, there may be more results available.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListResourcesRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ListResourcesRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -841,7 +877,16 @@ pub struct ListRootsResult {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ListToolsRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ListToolsRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -882,7 +927,7 @@ If present, there may be more results available.*/
 
 These map to syslog message severities, as specified in RFC-5424:
 https://datatracker.ietf.org/doc/html/rfc5424#section-6.2.1*/
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub enum LoggingLevel {
     #[serde(rename = "alert")]
     Alert,
@@ -928,7 +973,16 @@ pub struct LoggingMessageNotification {
 
 Keys not declared here are currently left unspecified by the spec and are up
 to the client to interpret.*/
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ModelHint {
     /**A hint for a model name.
 
@@ -1011,7 +1065,16 @@ pub struct Notification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for PaginatedRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct PaginatedRequestParams {
     /**An opaque token representing the current pagination position.
 If provided, the server should return results starting after this cursor.*/
@@ -1106,7 +1169,7 @@ pub struct ProgressNotification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///A progress token, used to associate progress notifications with the original request.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 #[serde(untagged)]
 pub enum ProgressToken {
     String(String),
@@ -1128,7 +1191,7 @@ pub struct Prompt {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Describes an argument that a prompt can accept.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct PromptArgument {
     ///A human-readable description of the argument.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1192,7 +1255,7 @@ pub struct PromptMessage {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Identifies a prompt.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct PromptReference {
     ///The name of the prompt or prompt template
     pub name: String,
@@ -1202,7 +1265,7 @@ pub struct PromptReference {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ReadResourceRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct ReadResourceRequestParams {
     ///The URI of the resource to read. The URI can use any protocol; it is up to the server how to interpret it.
     pub uri: String,
@@ -1270,7 +1333,7 @@ pub struct Request {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///A uniquely identifying ID for a request in JSON-RPC.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 #[serde(untagged)]
 pub enum RequestId {
     String(String),
@@ -1302,7 +1365,7 @@ This can be used by clients to populate UI elements.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///The contents of a specific resource or sub-resource.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct ResourceContents {
     ///The MIME type of this resource, if known.
     #[serde(rename = "mimeType")]
@@ -1336,7 +1399,7 @@ pub struct ResourceListChangedNotification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///A reference to a resource or resource template definition.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct ResourceReference {
     pub r#type: monostate::MustBe!("ref/resource"),
     ///The URI or URI template of the resource.
@@ -1372,7 +1435,7 @@ This can be used by clients to populate UI elements.*/
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for ResourceUpdatedNotificationParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct ResourceUpdatedNotificationParams {
     ///The URI of the resource that has been updated. This might be a sub-resource of the one that the client actually subscribed to.
     pub uri: String,
@@ -1401,7 +1464,7 @@ pub struct Result {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///The sender or recipient of messages and data in a conversation.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub enum Role {
     #[serde(rename = "assistant")]
     Assistant,
@@ -1409,7 +1472,7 @@ pub enum Role {
     User,
 }
 ///Represents a root directory or file that the server can operate on.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct Root {
     /**An optional name for the root. This can be used to provide a human-readable
 identifier for the root, which may be useful for display purposes or for
@@ -1468,7 +1531,16 @@ pub struct SamplingMessage {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the server offers any prompt templates.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ServerCapabilitiesPrompts {
     ///Whether this server supports notifications for changes to the prompt list.
     #[serde(rename = "listChanged")]
@@ -1479,7 +1551,16 @@ pub struct ServerCapabilitiesPrompts {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the server offers any resources to read.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ServerCapabilitiesResources {
     ///Whether this server supports notifications for changes to the resource list.
     #[serde(rename = "listChanged")]
@@ -1493,7 +1574,16 @@ pub struct ServerCapabilitiesResources {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Present if the server offers any tools to call.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ServerCapabilitiesTools {
     ///Whether this server supports notifications for changes to the tool list.
     #[serde(rename = "listChanged")]
@@ -1622,7 +1712,7 @@ pub struct SetLevelRequest {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for SubscribeRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct SubscribeRequestParams {
     ///The URI of the resource to subscribe to. The URI can use any protocol; it is up to the server how to interpret it.
     pub uri: String,
@@ -1653,7 +1743,7 @@ pub struct TextContent {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for TextResourceContents
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct TextResourceContents {
     ///The MIME type of this resource, if known.
     #[serde(rename = "mimeType")]
@@ -1709,7 +1799,16 @@ tool behavior (including descriptive properties like `title`).
 
 Clients should never make tool use decisions based on ToolAnnotations
 received from untrusted servers.*/
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    Eq,
+    Hash,
+    Default
+)]
 pub struct ToolAnnotations {
     /**If true, the tool may perform destructive updates to its environment.
 If false, the tool performs only additive updates.
@@ -1773,7 +1872,7 @@ pub struct ToolListChangedNotification {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 ///Generated from JSON schema definition for UnsubscribeRequestParams
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 pub struct UnsubscribeRequestParams {
     ///The URI of the resource to unsubscribe from.
     pub uri: String,

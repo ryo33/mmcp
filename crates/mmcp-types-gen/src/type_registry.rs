@@ -103,6 +103,26 @@ impl TypeRef {
             _ => quote! {},
         }
     }
+
+    pub fn is_eq_compatible(&self) -> bool {
+        match self {
+            TypeRef::ConstString(_) | TypeRef::String | TypeRef::Boolean | TypeRef::Integer => true,
+            // floating point numbers are not Eq compatible
+            TypeRef::Number => false,
+            _ => false,
+        }
+    }
+
+    pub fn is_hash(&self) -> bool {
+        matches!(
+            self,
+            TypeRef::ConstString(_)
+                | TypeRef::String
+                | TypeRef::Boolean
+                | TypeRef::Integer
+                | TypeRef::Number
+        )
+    }
 }
 
 #[derive(Clone)]

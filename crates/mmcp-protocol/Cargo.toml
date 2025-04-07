@@ -1,0 +1,16 @@
+[package]
+name = "mmcp-protocol"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# for types
+serde = { workspace = true, features = ["derive"] }
+serde_with = { version = "3.12", features = ["base64"] }
+serde_json = { workspace = true, features = ["raw_value"] }
+monostate = "0.1"
+indexmap = { version = "2.9", features = ["serde"] }
+
+# for ports
+anyhow = { workspace = true }
+thiserror = { workspace = true }

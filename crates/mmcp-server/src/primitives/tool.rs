@@ -3,7 +3,7 @@ use std::{borrow::Cow, future::Future, pin::Pin};
 use futures::FutureExt as _;
 use serde::Serialize;
 
-use crate::protocol::mcp::{
+use mmcp_protocol::mcp::{
     AudioContent, CallToolRequest, CallToolResult, CallToolResultContent, EmbeddedResource,
     ImageContent, TextContent, ToolAnnotations,
 };

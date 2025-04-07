@@ -21,16 +21,14 @@ schemars08 = { workspace = true, optional = true, features = [
 futures = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-inventory = { version = "0.3", optional = true }
 mmcp-macros = { workspace = true, optional = true }
 
 [features]
-default = ["schemars1", "macros", "inventory"]
+default = ["schemars1", "macros"]
 schemars1 = ["dep:schemars1"]
 schemars08 = ["dep:schemars08"]
 macros = ["dep:mmcp-macros"]
-inventory = ["dep:inventory"]
-server = ["dep:mmcp-server"]
-client = ["dep:mmcp-client"]
+server = ["dep:mmcp-server", "mmcp-rpc/runtime"]
+client = ["dep:mmcp-client", "mmcp-rpc/runtime"]
 server-stdio = ["dep:mmcp-server-stdio", "server"]
 server-axum = ["dep:mmcp-server-axum", "server"]
