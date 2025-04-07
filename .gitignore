@@ -5,6 +5,7 @@
 /target
 
 !crates/**/*.rs
+!examples/**/*.rs
 !Cargo.toml
 !Cargo.lock
 

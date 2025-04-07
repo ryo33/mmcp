@@ -1,3 +1,5 @@
+#![cfg_attr(rustfmt, rustfmt_skip)]
+#[expect(clippy::large_enum_variant)]
 ///Optional annotations for the client. The client can use annotations to inform how objects are used or displayed
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 pub struct Annotations {

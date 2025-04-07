@@ -1,0 +1,13 @@
+[package]
+name = "mmcp-server-stdio"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+mmcp-rpc = { workspace = true }
+
+tokio = { workspace = true, features = ["full"] }
+tokio-stream = { version = "0.1", features = ["full"] }
+anyhow = { workspace = true }
+futures = { workspace = true }
+thiserror = { workspace = true }

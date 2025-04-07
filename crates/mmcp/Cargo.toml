@@ -4,15 +4,33 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true, features = ["raw_value"] }
-monostate = "0.1"
-serde_with = { version = "3.12", features = ["base64"] }
-schemars1 = { workspace = true, optional = true }
-schemars08 = { workspace = true, optional = true }
-indexmap = { version = "2.9", features = ["serde"] }
+mmcp-rpc = { workspace = true }
+mmcp-server = { workspace = true, optional = true }
+mmcp-client = { workspace = true, optional = true }
+mmcp-server-stdio = { workspace = true, optional = true }
+mmcp-server-axum = { workspace = true, optional = true }
+
+schemars1 = { workspace = true, optional = true, features = [
+	"derive",
+	"preserve_order",
+] }
+schemars08 = { workspace = true, optional = true, features = [
+	"derive",
+	"preserve_order",
+] }
+futures = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+inventory = { version = "0.3", optional = true }
+mmcp-macros = { workspace = true, optional = true }
 
 [features]
-default = ["schemars1"]
+default = ["schemars1", "macros", "inventory"]
 schemars1 = ["dep:schemars1"]
 schemars08 = ["dep:schemars08"]
+macros = ["dep:mmcp-macros"]
+inventory = ["dep:inventory"]
+server = ["dep:mmcp-server"]
+client = ["dep:mmcp-client"]
+server-stdio = ["dep:mmcp-server-stdio", "server"]
+server-axum = ["dep:mmcp-server-axum", "server"]

@@ -20,7 +20,7 @@ fn main() {
     let code = prettyplease::unparse(&tokens);
 
     // Write the generated code to a file
-    let output_path = Path::new("crates/mmcp/src/protocol/mcp.rs");
+    let output_path = Path::new("crates/mmcp-rpc/src/protocol/mcp.rs");
     fs::write(output_path, code).unwrap();
 
     println!("Generated code written to {:?}", output_path);

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*"]
+members = ["crates/*", "examples/*"]
 
 resolver = "3"
 
@@ -9,3 +9,13 @@ serde_json = { version = "1.0" }
 tokio = { version = "1.44" }
 schemars08 = { version = "0.8", package = "schemars" }
 schemars1 = { version = "1.0.0-alpha.17", package = "schemars" }
+mmcp = { path = "crates/mmcp" }
+mmcp-macros = { path = "crates/mmcp-macros" }
+mmcp-server-axum = { path = "crates/mmcp-server-axum" }
+mmcp-server-stdio = { path = "crates/mmcp-server-stdio" }
+mmcp-server = { path = "crates/mmcp-server" }
+mmcp-client = { path = "crates/mmcp-client" }
+mmcp-rpc = { path = "crates/mmcp-rpc" }
+anyhow = { version = "1.0" }
+thiserror = { version = "2.0" }
+futures = { version = "0.3" }

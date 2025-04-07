@@ -314,6 +314,8 @@ impl TypeGeneratorConfig {
             });
 
         quote! {
+            #![cfg_attr(rustfmt, rustfmt_skip)]
+            #[expect(clippy::large_enum_variant)]
             #(#definitions)*
         }
     }

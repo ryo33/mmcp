@@ -1,0 +1,9 @@
+[package]
+name = "mmcp-uuid"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mmcp = { workspace = true, features = ["server-stdio"] }
+uuid = { version = "1", features = ["v4"] }
