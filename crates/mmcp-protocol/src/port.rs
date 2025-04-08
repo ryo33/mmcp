@@ -41,7 +41,7 @@ pub trait RPCSink {
 
 pub trait RPCPort {
     /// Get the sink for sending messages to the peer.
-    fn sink(&self) -> impl RPCSink + Send + 'static;
+    fn sink(&self) -> impl RPCSink + Clone + Send + 'static;
     /// Fetch a message from the peer. Handling commands in the background which sent by the `RPCSink`.
     fn progress(
         &mut self,

@@ -5,9 +5,14 @@ use futures::{
     channel::{mpsc, oneshot},
 };
 use mmcp_protocol::{
-    mcp::{JSONRPCError, JSONRPCMessage, JSONRPCResponse, RequestId},
-    port::{RPCPort, RPCSink},
+    mcp::{
+        JSONRPCError, JSONRPCMessage, JSONRPCNotification, JSONRPCRequest, JSONRPCResponse,
+        JsonrpcBatchResponseItem, JsonrpcNotificationParams, JsonrpcRequestParams, RequestId,
+        Result as JsonRpcResult,
+    },
+    port::{RPCPort, RPCPortError, RPCSink},
 };
+use serde_json::Value;
 
 type ResponseSubscriber = oneshot::Sender<Result<JSONRPCResponse, JSONRPCError>>;
 
@@ -29,7 +34,7 @@ pub struct RPCRuntime<T, R> {
     rpc_rx: R,
     command_tx: mpsc::Sender<Command>,
     command_rx: mpsc::Receiver<Command>,
-    response_subscriptions: Vec<(RequestId, ResponseSubscriber)>,
+    response_subscriptions: HashMap<RequestId, ResponseSubscriber>,
 }
 
 impl<T, R> RPCRuntime<T, R> {
@@ -41,19 +46,6 @@ impl<T, R> RPCRuntime<T, R> {
             command_tx,
             command_rx,
             response_subscriptions: Default::default(),
-        }
-    }
-
-    // Helper method to find and remove a subscription by request ID
-    fn find_subscription(&mut self, id: &RequestId) -> Option<ResponseSubscriber> {
-        if let Some(idx) = self
-            .response_subscriptions
-            .iter()
-            .position(|(req_id, _)| req_id == id)
-        {
-            Some(self.response_subscriptions.swap_remove(idx).1)
-        } else {
-            None
         }
     }
 }
@@ -78,7 +70,7 @@ where
                     request_id,
                     response,
                 } => {
-                    self.response_subscriptions.push((request_id, response));
+                    self.response_subscriptions.insert(request_id, response);
                 }
             }
         }
@@ -88,17 +80,21 @@ where
             // 3. If it's a response, attempt to forward it to subscribers
             match &message {
                 JSONRPCMessage::JSONRPCResponse(response) => {
-                    if let Some(subscriber) = self.find_subscription(&response.id) {
-                        // Ignore errors if the subscriber dropped their receiver
-                        let _ = subscriber.send(Ok(response.clone()));
-                        // Return the message anyway so callers can process it if needed
-                    }
+                    self.handle_response(response);
                 }
                 JSONRPCMessage::JSONRPCError(error) => {
-                    if let Some(subscriber) = self.find_subscription(&error.id) {
-                        // Ignore errors if the subscriber dropped their receiver
-                        let _ = subscriber.send(Err(error.clone()));
-                        // Return the message anyway so callers can process it if needed
+                    self.handle_error(error);
+                }
+                JSONRPCMessage::JSONRPCBatchResponse(batch) => {
+                    for item in batch.0.iter() {
+                        match item {
+                            JsonrpcBatchResponseItem::JSONRPCResponse(response) => {
+                                self.handle_response(response);
+                            }
+                            JsonrpcBatchResponseItem::JSONRPCError(error) => {
+                                self.handle_error(error);
+                            }
+                        }
                     }
                 }
                 _ => {}
@@ -109,6 +105,28 @@ where
         } else {
             // Return None only when the stream is closed
             Ok(None)
+        }
+    }
+}
+
+impl<S, R> RPCRuntime<S, R>
+where
+    S: Sink<JSONRPCMessage> + Unpin + Clone + Send + Sync + 'static,
+    R: Stream<Item = JSONRPCMessage> + Unpin + Send + Sync + 'static,
+{
+    fn handle_response(&mut self, response: &JSONRPCResponse) {
+        if let Some(subscriber) = self.response_subscriptions.remove(&response.id) {
+            // Ignore errors if the subscriber dropped their receiver
+            let _ = subscriber.send(Ok(response.clone()));
+            // Return the message anyway so callers can process it if needed
+        }
+    }
+
+    fn handle_error(&mut self, error: &JSONRPCError) {
+        if let Some(subscriber) = self.response_subscriptions.remove(&error.id) {
+            // Ignore errors if the subscriber dropped their receiver
+            let _ = subscriber.send(Err(error.clone()));
+            // Return the message anyway so callers can process it if needed
         }
     }
 }
@@ -130,7 +148,31 @@ where
         method: &str,
         notification: T,
     ) -> anyhow::Result<()> {
-        todo!()
+        // Serialize notification to JSON
+        let notification_value = serde_json::to_value(notification)
+            .map_err(|e| anyhow::anyhow!("failed to serialize notification: {}", e))?;
+
+        // If the notification is already a JSON object or null for optional params, extract it
+        let params = match notification_value {
+            Value::Object(obj) => Some(JsonrpcNotificationParams {
+                meta: None,
+                extra: obj,
+            }),
+            Value::Null => None, // Allow null for optional params
+            _ => return Err(RPCPortError::SerializeNotObject(notification_value).into()),
+        };
+
+        // Create notification message
+        let rpc_notification = JSONRPCNotification {
+            jsonrpc: Default::default(),
+            method: method.to_string(),
+            params,
+            extra: Default::default(),
+        };
+
+        // Send notification
+        self.send_message(JSONRPCMessage::JSONRPCNotification(rpc_notification))
+            .await
     }
 
     async fn send_response<T: serde::Serialize + Send>(
@@ -138,7 +180,29 @@ where
         request_id: RequestId,
         response: T,
     ) -> anyhow::Result<()> {
-        todo!()
+        // Serialize response
+        let response_value = serde_json::to_value(response)
+            .map_err(|e| anyhow::anyhow!("failed to serialize response: {}", e))?;
+
+        // Create JSON-RPC response with Result
+        let result = JsonRpcResult {
+            meta: None,
+            extra: match response_value {
+                Value::Object(obj) => obj,
+                _ => return Err(RPCPortError::SerializeNotObject(response_value).into()),
+            },
+        };
+
+        let rpc_response = JSONRPCResponse {
+            id: request_id,
+            jsonrpc: Default::default(),
+            result,
+            extra: Default::default(),
+        };
+
+        // Send response
+        self.send_message(JSONRPCMessage::JSONRPCResponse(rpc_response))
+            .await
     }
 
     async fn request<T: serde::Serialize + Send, R: serde::de::DeserializeOwned + Send>(
@@ -147,8 +211,6 @@ where
         method: &str,
         request: T,
     ) -> anyhow::Result<Result<R, JSONRPCError>> {
-        use mmcp_protocol::mcp::{JSONRPCRequest, JsonrpcRequestParams};
-
         // Create oneshot channel for receiving the response
         let (response_tx, response_rx) = oneshot::channel();
 
@@ -162,19 +224,26 @@ where
             .map_err(|_| anyhow::anyhow!("failed to register response subscriber"))?;
 
         // Serialize request to JSON
-        let params = serde_json::to_value(request)
+        let params_value = serde_json::to_value(request)
             .map_err(|e| anyhow::anyhow!("failed to serialize request params: {}", e))?;
+
+        // If the params is already a JSON object or null for optional params, extract it
+        let params = match params_value {
+            Value::Object(obj) => Some(JsonrpcRequestParams {
+                meta: None,
+                extra: obj,
+            }),
+            Value::Null => None, // Allow null for optional params
+            _ => return Err(RPCPortError::SerializeNotObject(params_value).into()),
+        };
 
         // Create JSON-RPC request
         let rpc_request = JSONRPCRequest {
             id: request_id,
-            jsonrpc: monostate::MustBe!("2.0"),
+            jsonrpc: Default::default(),
             method: method.to_string(),
-            params: Some(JsonrpcRequestParams {
-                meta: None,
-                extra: serde_json::Map::new(),
-            }),
-            extra: serde_json::Map::new(),
+            params,
+            extra: Default::default(),
         };
 
         // Send request
@@ -189,8 +258,13 @@ where
         // Process result
         match response {
             Ok(response) => {
-                let result = serde_json::from_value(response.result)
+                // Directly use the extra field as the Value object
+                let result_value = Value::Object(response.result.extra);
+
+                // Deserialize into the expected type
+                let result = serde_json::from_value(result_value)
                     .map_err(|e| anyhow::anyhow!("failed to deserialize response: {}", e))?;
+
                 Ok(Ok(result))
             }
             Err(error) => Ok(Err(error)),
