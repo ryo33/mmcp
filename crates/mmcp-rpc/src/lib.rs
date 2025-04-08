@@ -53,7 +53,7 @@ impl<T, R> RPCRuntime<T, R> {
 impl<S, R> RPCPort for RPCRuntime<S, R>
 where
     S: Sink<JSONRPCMessage> + Unpin + Clone + Send + Sync + 'static,
-    R: Stream<Item = JSONRPCMessage> + Unpin + Send + Sync + 'static,
+    R: Stream<Item = anyhow::Result<JSONRPCMessage>> + Unpin + Send + Sync + 'static,
 {
     fn sink(&self) -> impl RPCSink + Clone + Send + 'static {
         RPCSender {
@@ -76,43 +76,43 @@ where
         }
 
         // 2. Try to get a message from the stream, returning None if the stream is closed
-        if let Some(message) = self.rpc_rx.next().await {
-            // 3. If it's a response, attempt to forward it to subscribers
-            match &message {
-                JSONRPCMessage::JSONRPCResponse(response) => {
-                    self.handle_response(response);
-                }
-                JSONRPCMessage::JSONRPCError(error) => {
-                    self.handle_error(error);
-                }
-                JSONRPCMessage::JSONRPCBatchResponse(batch) => {
-                    for item in batch.0.iter() {
-                        match item {
-                            JsonrpcBatchResponseItem::JSONRPCResponse(response) => {
-                                self.handle_response(response);
-                            }
-                            JsonrpcBatchResponseItem::JSONRPCError(error) => {
-                                self.handle_error(error);
+        match self.rpc_rx.next().await {
+            Some(Ok(message)) => {
+                match &message {
+                    JSONRPCMessage::JSONRPCResponse(response) => {
+                        self.handle_response(response);
+                    }
+                    JSONRPCMessage::JSONRPCError(error) => {
+                        self.handle_error(error);
+                    }
+                    JSONRPCMessage::JSONRPCBatchResponse(batch) => {
+                        for item in batch.0.iter() {
+                            match item {
+                                JsonrpcBatchResponseItem::JSONRPCResponse(response) => {
+                                    self.handle_response(response);
+                                }
+                                JsonrpcBatchResponseItem::JSONRPCError(error) => {
+                                    self.handle_error(error);
+                                }
                             }
                         }
                     }
+                    _ => {}
                 }
-                _ => {}
+                Ok(Some(message))
             }
-
-            // Return the message even if it's a response without subscribers
-            Ok(Some(message))
-        } else {
-            // Return None only when the stream is closed
-            Ok(None)
+            Some(Err(e)) => Err(e),
+            None => {
+                // Return None only when the stream is closed
+                Ok(None)
+            }
         }
     }
 }
 
 impl<S, R> RPCRuntime<S, R>
 where
-    S: Sink<JSONRPCMessage> + Unpin + Clone + Send + Sync + 'static,
-    R: Stream<Item = JSONRPCMessage> + Unpin + Send + Sync + 'static,
+    S: Sink<JSONRPCMessage> + Unpin + 'static,
 {
     fn handle_response(&mut self, response: &JSONRPCResponse) {
         if let Some(subscriber) = self.response_subscriptions.remove(&response.id) {

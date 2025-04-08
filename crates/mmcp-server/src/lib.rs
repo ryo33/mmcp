@@ -1,20 +1,22 @@
 pub mod inventory;
 pub mod primitives;
 
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::BTreeMap};
 
 use crate::{
     inventory::ToolRegistration,
     primitives::tool::{BoxedTool, Tool},
 };
-use anyhow::anyhow;
+use anyhow::{Context as _, anyhow};
 use mmcp_protocol::{
-    consts::{PROTOCOL_VERSION, error_codes},
+    ProtocolVersion,
+    consts::error_codes,
     mcp::{
-        self, CallToolRequest, CallToolResult, CallToolResultContent, Implementation,
-        InitializeRequest, InitializeResult, JSONRPCBatchRequest, JSONRPCError, JSONRPCMessage,
-        JSONRPCRequest, JSONRPCResponse, JsonrpcBatchResponseItem, JsonrpcErrorError, RequestId,
-        ServerCapabilities, ServerCapabilitiesTools, TextContent,
+        self, CallToolRequest, CallToolRequestParams, CallToolResult, CallToolResultContent,
+        Implementation, InitializeRequest, InitializeResult, JSONRPCBatchRequest, JSONRPCError,
+        JSONRPCMessage, JSONRPCRequest, JSONRPCResponse, JsonrpcBatchResponseItem,
+        JsonrpcErrorError, RequestId, ServerCapabilities, ServerCapabilitiesPrompts,
+        ServerCapabilitiesResources, ServerCapabilitiesTools, TextContent,
     },
     port::{RPCPort, RPCSink},
 };
@@ -22,7 +24,7 @@ use mmcp_protocol::{
 pub struct MCPServer {
     name: String,
     version: String,
-    tools: HashMap<Cow<'static, str>, BoxedTool>,
+    tools: BTreeMap<Cow<'static, str>, BoxedTool>,
     instructions: Option<String>,
 }
 
@@ -31,7 +33,7 @@ impl MCPServer {
         Self {
             name: name.into(),
             version: version.into(),
-            tools: HashMap::new(),
+            tools: Default::default(),
             instructions: None,
         }
     }
@@ -56,6 +58,18 @@ impl MCPServer {
         self.tools.values()
     }
 
+    /// List the resources available on this server.
+    pub fn list_resources(&self) -> impl Iterator<Item = mcp::Resource> {
+        // Currently, we don't have any resources, so return an empty iterator
+        std::iter::empty()
+    }
+
+    /// List the prompts available on this server.
+    pub fn list_prompts(&self) -> impl Iterator<Item = mcp::Prompt> {
+        // Currently, we don't have any prompts, so return an empty iterator
+        std::iter::empty()
+    }
+
     /// Set the instructions for the server which will be sent to the client on initialize.
     pub fn with_instructions(mut self, instructions: impl Into<String>) -> Self {
         self.instructions = Some(instructions.into());
@@ -63,7 +77,7 @@ impl MCPServer {
     }
 
     /// Start the server by initializing and then processing requests
-    pub async fn start<P: RPCPort>(&self, mut port: P) -> anyhow::Result<()> {
+    pub async fn start<P: RPCPort>(self, mut port: P) -> anyhow::Result<()> {
         // Create a single sink to use throughout the lifecycle
         let mut sink = port.sink();
 
@@ -92,7 +106,7 @@ impl MCPServer {
         let mut queued_messages = Vec::new();
 
         // Step 1: Wait for initialize request
-        let (init_request_id, _init_request) = loop {
+        let (init_request_id, init_request) = loop {
             let message = port
                 .progress()
                 .await?
@@ -116,7 +130,8 @@ impl MCPServer {
         };
 
         // Step 2: Respond to initialize request
-        self.send_initialize_response(sink, init_request_id).await?;
+        self.send_initialize_response(sink, init_request_id, &init_request)
+            .await?;
 
         // Step 3: Wait for initialized notification
         loop {
@@ -145,7 +160,13 @@ impl MCPServer {
         &self,
         sink: &mut S,
         id: RequestId,
+        init_request: &InitializeRequest,
     ) -> anyhow::Result<()> {
+        let protocol_version = init_request
+            .params
+            .protocol_version
+            .parse::<ProtocolVersion>()
+            .context("failed to parse protocol version")?;
         let response = InitializeResult {
             meta: None,
             capabilities: ServerCapabilities {
@@ -153,10 +174,19 @@ impl MCPServer {
                     list_changed: Some(true),
                     extra: Default::default(),
                 }),
+                resources: Some(ServerCapabilitiesResources {
+                    list_changed: Some(true),
+                    subscribe: Some(false),
+                    extra: Default::default(),
+                }),
+                prompts: Some(ServerCapabilitiesPrompts {
+                    list_changed: Some(true),
+                    extra: Default::default(),
+                }),
                 ..Default::default()
             },
             instructions: self.instructions.clone(),
-            protocol_version: PROTOCOL_VERSION.to_string(),
+            protocol_version: protocol_version.to_string(),
             server_info: Implementation {
                 name: self.name.clone(),
                 version: self.version.clone(),
@@ -223,39 +253,44 @@ impl MCPServer {
                     }));
                 };
 
-                let tool_request: CallToolRequest =
-                    match serde_json::from_value(serde_json::Value::Object(params.extra)) {
-                        Ok(req) => req,
-                        Err(e) => {
-                            let result = CallToolResult {
+                let tool_request = match serde_json::from_value::<CallToolRequestParams>(
+                    serde_json::Value::Object(params.extra),
+                ) {
+                    Ok(req) => req,
+                    Err(e) => {
+                        let result = CallToolResult {
+                            extra: Default::default(),
+                            meta: Default::default(),
+                            content: vec![CallToolResultContent::TextContent(TextContent {
+                                text: format!("Failed to parse tool call request: {}", e),
+                                r#type: Default::default(),
+                                annotations: Default::default(),
                                 extra: Default::default(),
-                                meta: Default::default(),
-                                content: vec![CallToolResultContent::TextContent(TextContent {
-                                    text: format!("Failed to parse tool call request: {}", e),
-                                    r#type: Default::default(),
-                                    annotations: Default::default(),
-                                    extra: Default::default(),
-                                })],
-                                is_error: Some(true),
-                            };
-                            return Ok(JsonrpcBatchResponseItem::JSONRPCResponse(
-                                JSONRPCResponse {
-                                    id: request.id,
-                                    jsonrpc: Default::default(),
-                                    result: serialize_tool_call_result(result)?,
-                                    extra: Default::default(),
-                                },
-                            ));
-                        }
-                    };
+                            })],
+                            is_error: Some(true),
+                        };
+                        return Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+                            id: request.id,
+                            jsonrpc: Default::default(),
+                            result: serialize_tool_call_result(result)?,
+                            extra: Default::default(),
+                        }));
+                    }
+                };
 
                 // Extract tool name from params
-                let tool_name = tool_request.params.name.as_str();
+                let tool_name = tool_request.name.as_str();
 
                 // Find the tool and execute it
                 if let Some(tool) = self.get_tool(tool_name) {
                     // Execute the tool using the tool trait's execute method
-                    let result = tool.execute(tool_request).await;
+                    let result = tool
+                        .execute(CallToolRequest {
+                            method: Default::default(),
+                            params: tool_request,
+                            extra: request.extra,
+                        })
+                        .await;
                     Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
                         id: request.id,
                         jsonrpc: Default::default(),
@@ -297,6 +332,46 @@ impl MCPServer {
                     result: mcp::Result {
                         meta: Default::default(),
                         extra: serde_json::json!({"tools": tools})
+                            .as_object()
+                            .unwrap()
+                            .clone(),
+                    },
+                    extra: Default::default(),
+                }))
+            }
+            "resources/list" => {
+                // Handle resource listing request
+                let resources = self
+                    .list_resources()
+                    .map(|resource| Ok(serde_json::to_value(resource)?))
+                    .collect::<anyhow::Result<Vec<_>>>()?;
+
+                Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+                    id: request.id,
+                    jsonrpc: Default::default(),
+                    result: mcp::Result {
+                        meta: Default::default(),
+                        extra: serde_json::json!({"resources": resources})
+                            .as_object()
+                            .unwrap()
+                            .clone(),
+                    },
+                    extra: Default::default(),
+                }))
+            }
+            "prompts/list" => {
+                // Handle prompt listing request
+                let prompts = self
+                    .list_prompts()
+                    .map(|prompt| Ok(serde_json::to_value(prompt)?))
+                    .collect::<anyhow::Result<Vec<_>>>()?;
+
+                Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+                    id: request.id,
+                    jsonrpc: Default::default(),
+                    result: mcp::Result {
+                        meta: Default::default(),
+                        extra: serde_json::json!({"prompts": prompts})
                             .as_object()
                             .unwrap()
                             .clone(),

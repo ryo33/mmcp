@@ -1,4 +1,5 @@
 use convert_case::{Case, Casing as _};
+use darling::FromMeta;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::{
@@ -6,30 +7,52 @@ use syn::{
     Type, parse_quote,
 };
 
-pub fn generate(item: ItemFn) -> TokenStream {
+#[derive(FromMeta)]
+pub struct ToolArgs {
+    description: Option<String>,
+}
+
+pub fn generate(args: ToolArgs, item: ItemFn) -> TokenStream {
     let tool_name = &item.sig.ident;
     let tool_struct_name = format_ident!("{}Tool", tool_name.to_string().to_case(Case::Pascal));
-    let description = &item
-        .attrs
-        .iter()
-        .filter_map(|attr| {
-            if !attr.path().is_ident("doc") {
-                return None;
-            }
-            let Meta::NameValue(MetaNameValue {
-                value:
-                    Expr::Lit(ExprLit {
-                        lit: Lit::Str(doc), ..
-                    }),
-                ..
-            }) = &attr.meta
-            else {
-                panic!("Expected a doc attribute but got {:?}", attr);
+
+    // Use description from args if provided, otherwise extract from doc comments
+    let description = if let Some(desc) = args.description {
+        desc
+    } else {
+        // Only process doc comments if no description arg is provided
+        let doc_description = item
+            .attrs
+            .iter()
+            .filter_map(|attr| {
+                if !attr.path().is_ident("doc") {
+                    return None;
+                }
+                let Meta::NameValue(MetaNameValue {
+                    value:
+                        Expr::Lit(ExprLit {
+                            lit: Lit::Str(doc), ..
+                        }),
+                    ..
+                }) = &attr.meta
+                else {
+                    panic!("Expected a doc attribute but got {:?}", attr);
+                };
+                Some(doc.value())
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+            .trim()
+            .to_string();
+
+        if doc_description.is_empty() {
+            return quote! {
+                compile_error!("Tool must have a description. Either provide a description argument to the #[tool] attribute or add doc comments to the function.");
             };
-            Some(doc.value())
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
+        }
+
+        doc_description
+    };
 
     let InputSchema {
         struct_def: input_struct_def,
@@ -62,9 +85,9 @@ pub fn generate(item: ItemFn) -> TokenStream {
         #[derive(Default)]
         pub struct #tool_struct_name;
 
-        ::mmcp::inventory::submit! { ::mmcp::inventory::ToolRegistration::new::<#tool_struct_name>() }
+        ::mmcp::server::inventory::submit! { ::mmcp::server::inventory::ToolRegistration::new::<#tool_struct_name>() }
 
-        impl ::mmcp::primitives::tool::TypedTool for #tool_struct_name {
+        impl ::mmcp::server::primitives::tool::TypedTool for #tool_struct_name {
             type Input = #input_struct_type;
             type Output = #output_type;
 
@@ -130,7 +153,7 @@ fn generate_input_schema(tool_name: &Ident, input: &ItemFn) -> Result<InputSchem
             struct_def: TokenStream::new(),
             struct_type: parse_quote!(::mmcp::schemars::Any),
             get_schema: quote! {
-                "{}"
+                r#"{"type": "object"}"#
             },
             destructure_input: quote! {},
             call: quote! {

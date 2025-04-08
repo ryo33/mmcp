@@ -9,6 +9,8 @@ mmcp-server = { workspace = true, optional = true }
 mmcp-client = { workspace = true, optional = true }
 mmcp-server-stdio = { workspace = true, optional = true }
 mmcp-server-axum = { workspace = true, optional = true }
+mmcp-macros = { workspace = true, optional = true }
+mmcp-protocol = { workspace = true }
 
 schemars1 = { workspace = true, optional = true, features = [
 	"derive",
@@ -21,7 +23,8 @@ schemars08 = { workspace = true, optional = true, features = [
 futures = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-mmcp-macros = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["raw_value"] }
 
 [features]
 default = ["schemars1", "macros"]

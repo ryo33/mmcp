@@ -1,6 +1,3 @@
-/// Current protocol version as defined in the Model Context Protocol (MCP) specification
-pub const PROTOCOL_VERSION: &str = "2025-03-26";
-
 /// JSON-RPC standard error codes
 pub mod error_codes {
     // Standard JSON-RPC 2.0 error codes
