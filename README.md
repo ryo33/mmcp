@@ -56,6 +56,7 @@ async fn main() {
 - [ ] Authentication
 - [ ] Logging
 - [ ] Schemars 0.8 support
+- [ ] Support more MCP functionalities
 
 ## Development
 
