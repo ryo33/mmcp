@@ -2,14 +2,21 @@
 name = "mmcp"
 version = "0.1.0"
 edition = "2024"
+description = "A modular, minimalistic and macro-powered MCP (Model Context Protocol) framework for Rust."
+homepage = "https://github.com/ryo33/mmcp"
+repository = "https://github.com/ryo33/mmcp"
+license = "MIT OR Apache-2.0"
 readme = "README.md"
+keywords = ["mcp"]
+categories = []
 
 [dependencies]
-mmcp-rpc = { workspace = true }
+mmcp-rpc = { workspace = true, optional = true }
 mmcp-server = { workspace = true, optional = true }
 mmcp-client = { workspace = true, optional = true }
 mmcp-server-stdio = { workspace = true, optional = true }
 mmcp-server-axum = { workspace = true, optional = true }
+mmcp-client-stdio = { workspace = true, optional = true }
 mmcp-macros = { workspace = true, optional = true }
 mmcp-protocol = { workspace = true }
 
@@ -32,7 +39,8 @@ default = ["schemars1", "macros"]
 schemars1 = ["dep:schemars1"]
 schemars08 = ["dep:schemars08"]
 macros = ["dep:mmcp-macros"]
-server = ["dep:mmcp-server", "mmcp-rpc/runtime"]
-client = ["dep:mmcp-client", "mmcp-rpc/runtime"]
+server = ["dep:mmcp-server", "dep:mmcp-rpc"]
+client = ["dep:mmcp-client", "dep:mmcp-rpc"]
 server-stdio = ["dep:mmcp-server-stdio", "server"]
 server-axum = ["dep:mmcp-server-axum", "server"]
+client-stdio = ["dep:mmcp-client-stdio", "client"]

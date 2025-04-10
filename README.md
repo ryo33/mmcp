@@ -44,6 +44,17 @@ async fn main() {
 }
 ```
 
+## Implementation Status
+
+- [x] STDIO server implementation
+- [x] Protocol definitions
+- [x] Tool macros
+- [x] RPC implementation
+- [ ] HTTP transport with Axum
+- [ ] Client implementation
+- [ ] Authentication
+- [ ] Logging
+
 ## Development
 
 ```json

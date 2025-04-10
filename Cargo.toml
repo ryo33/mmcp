@@ -13,6 +13,7 @@ mmcp = { path = "crates/mmcp" }
 mmcp-macros = { path = "crates/mmcp-macros" }
 mmcp-server-axum = { path = "crates/mmcp-server-axum" }
 mmcp-server-stdio = { path = "crates/mmcp-server-stdio" }
+mmcp-client-stdio = { path = "crates/mmcp-client-stdio" }
 mmcp-server = { path = "crates/mmcp-server" }
 mmcp-client = { path = "crates/mmcp-client" }
 mmcp-protocol = { path = "crates/mmcp-protocol" }

@@ -1,14 +1,13 @@
 [package]
-name = "mmcp-server-axum"
+name = "mmcp-client-stdio"
 version = "0.1.0"
 edition = "2024"
-description = "Axum HTTP server adapter for the MMCP framework."
+description = "Standard I/O client adapter for the MMCP framework."
 homepage = "https://github.com/ryo33/mmcp"
 repository = "https://github.com/ryo33/mmcp"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
-keywords = ["mcp", "axum"]
+keywords = ["mcp", "stdio"]
 categories = []
 
 [dependencies]
-mmcp-rpc = { workspace = true }

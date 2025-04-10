@@ -21,6 +21,17 @@ This is the main crate for the MMCP framework, providing core functionality and 
 * `server-stdio` - Enables stdio server transport
 * `server-axum` - Enables axum server transport
 
+## Implementation Status
+
+- [x] STDIO server implementation
+- [x] Protocol definitions
+- [x] Tool macros
+- [x] RPC implementation
+- [ ] HTTP transport with Axum
+- [ ] Client implementation
+- [ ] Authentication
+- [ ] Logging
+
 ## Example
 
 ```rust

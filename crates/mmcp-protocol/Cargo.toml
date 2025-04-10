@@ -2,7 +2,13 @@
 name = "mmcp-protocol"
 version = "0.1.0"
 edition = "2024"
+description = "Protocol definitions for the MMCP framework."
+homepage = "https://github.com/ryo33/mmcp"
+repository = "https://github.com/ryo33/mmcp"
+license = "MIT OR Apache-2.0"
 readme = "README.md"
+keywords = ["mcp"]
+categories = []
 
 [dependencies]
 # for types

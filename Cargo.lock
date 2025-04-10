@@ -452,6 +452,7 @@ dependencies = [
  "anyhow",
  "futures",
  "mmcp-client",
+ "mmcp-client-stdio",
  "mmcp-macros",
  "mmcp-protocol",
  "mmcp-rpc",
@@ -471,6 +472,10 @@ version = "0.1.0"
 dependencies = [
  "mmcp-rpc",
 ]
+
+[[package]]
+name = "mmcp-client-stdio"
+version = "0.1.0"
 
 [[package]]
 name = "mmcp-macros"
@@ -506,7 +511,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "tokio",
 ]
 
 [[package]]
