@@ -54,6 +54,7 @@ async fn main() {
 - [ ] Client implementation
 - [ ] Authentication
 - [ ] Logging
+- [ ] Schemars 0.8 support
 
 ## Development
 

@@ -1,6 +1,8 @@
 [workspace]
 members = ["crates/*", "examples/*"]
 
+exclude = ["examples/uuid-schemars08"]
+
 resolver = "3"
 
 [workspace.dependencies]

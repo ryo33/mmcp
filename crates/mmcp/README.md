@@ -10,17 +10,6 @@ A modular, minimalistic and macro-powered MCP (Model Context Protocol) framework
 
 This is the main crate for the MMCP framework, providing core functionality and interfaces.
 
-## Features
-
-* `default` - Enables `schemars1` and `macros` features
-* `schemars1` - Enables schemars 1.0 support
-* `schemars08` - Enables schemars 0.8 support
-* `macros` - Enables procedural macros
-* `server` - Enables server components
-* `client` - Enables client components
-* `server-stdio` - Enables stdio server transport
-* `server-axum` - Enables axum server transport
-
 ## Implementation Status
 
 - [x] STDIO server implementation
@@ -31,6 +20,7 @@ This is the main crate for the MMCP framework, providing core functionality and 
 - [ ] Client implementation
 - [ ] Authentication
 - [ ] Logging
+- [ ] Schemars 0.8 support
 
 ## Example
 

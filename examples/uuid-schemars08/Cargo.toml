@@ -1,0 +1,18 @@
+[package]
+name = "mmcp-uuid-schemars08"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mmcp = { path = "../../crates/mmcp", default-features = false, features = [
+	"server-stdio",
+	"macros",
+	"schemars08",
+] }
+uuid = { version = "1", features = ["v4"] }
+tokio = { workspace = true, features = ["full"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
+serde_json = { workspace = true, features = ["preserve_order"] }
