@@ -8,13 +8,20 @@
 
 A modular, minimalistic and macro-powered MCP (Model Context Protocol) framework for Rust.
 
-## Examples
+This is the main crate for the MMCP framework, providing core functionality and interfaces.
 
-```toml
-mmcp = { version = "0.1", features = ["server-stdio"] }
-uuid = { version = "1", features = ["v4"] }
-tokio = { version = "1", features = ["full"] }
-```
+## Features
+
+* `default` - Enables `schemars1` and `macros` features
+* `schemars1` - Enables schemars 1.0 support
+* `schemars08` - Enables schemars 0.8 support
+* `macros` - Enables procedural macros
+* `server` - Enables server components
+* `client` - Enables client components
+* `server-stdio` - Enables stdio server transport
+* `server-axum` - Enables axum server transport
+
+## Example
 
 ```rust
 use mmcp::{
@@ -44,21 +51,6 @@ async fn main() {
 }
 ```
 
-## Development
+## License
 
-```json
-{
-	"mcpServers": {
-		"mmcp-uuid": {
-			"command": "cargo",
-			"args": [
-				"run",
-				"--manifest-path",
-				"/path/to/mmcp/Cargo.toml",
-				"-p",
-				"mmcp-uuid"
-			]
-		}
-	}
-}
-```
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT) at your option.

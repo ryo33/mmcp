@@ -2,6 +2,7 @@
 name = "mmcp-rpc"
 version = "0.1.0"
 edition = "2024"
+readme = "README.md"
 
 [dependencies]
 mmcp-protocol = { workspace = true }
@@ -11,7 +12,3 @@ thiserror = { workspace = true }
 futures = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-tokio = { workspace = true, features = ["full"], optional = true }
-
-[features]
-runtime = ["dep:tokio"]
