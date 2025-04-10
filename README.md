@@ -37,10 +37,11 @@ fn generate_uuid_many(count: usize) -> Vec<Text<Uuid>> {
 
 #[tokio::main]
 async fn main() {
-    let server = MCPServer::new("mmcp-uuid", env!("CARGO_PKG_VERSION")).with_tools_from_inventory();
-
-    let adapter = stdio_server_rpc();
-    server.start(adapter).await.unwrap();
+    MCPServer::new("mmcp-uuid", env!("CARGO_PKG_VERSION"))
+        .with_tools_from_inventory()
+        .start(stdio_server_rpc())
+        .await
+        .unwrap();
 }
 ```
 
