@@ -12,11 +12,13 @@ use mmcp_protocol::{
     ProtocolVersion,
     consts::error_codes,
     mcp::{
-        self, CallToolRequest, CallToolRequestParams, CallToolResult, CallToolResultContent,
+        self, CallToolRequest, CallToolResult, ClientRequest, CompleteRequest, GetPromptRequest,
         Implementation, InitializeRequest, InitializeResult, JSONRPCBatchRequest, JSONRPCError,
         JSONRPCMessage, JSONRPCRequest, JSONRPCResponse, JsonrpcBatchResponseItem,
-        JsonrpcErrorError, RequestId, ServerCapabilities, ServerCapabilitiesPrompts,
-        ServerCapabilitiesResources, ServerCapabilitiesTools, TextContent,
+        JsonrpcErrorError, ListPromptsRequest, ListResourcesRequest, ListToolsRequest, PingRequest,
+        ReadResourceRequest, RequestId, ServerCapabilities, ServerCapabilitiesPrompts,
+        ServerCapabilitiesResources, ServerCapabilitiesTools, SetLevelRequest, SubscribeRequest,
+        UnsubscribeRequest,
     },
     port::{RPCPort, RPCSink},
 };
@@ -209,16 +211,16 @@ impl MCPServer {
     ) -> anyhow::Result<()> {
         match message {
             JSONRPCMessage::JSONRPCRequest(request) => {
-                let response = self.handle_request(request).await?;
-                match response {
-                    JsonrpcBatchResponseItem::JSONRPCResponse(response) => {
-                        sink.send_message(JSONRPCMessage::JSONRPCResponse(response))
-                            .await?;
-                    }
-                    JsonrpcBatchResponseItem::JSONRPCError(error) => {
-                        sink.send_message(JSONRPCMessage::JSONRPCError(error))
-                            .await?;
-                    }
+                if let Some(response) = self.handle_request(request).await? {
+                    let message = match response {
+                        JsonrpcBatchResponseItem::JSONRPCResponse(response) => {
+                            JSONRPCMessage::JSONRPCResponse(response)
+                        }
+                        JsonrpcBatchResponseItem::JSONRPCError(error) => {
+                            JSONRPCMessage::JSONRPCError(error)
+                        }
+                    };
+                    sink.send_message(message).await?;
                 }
             }
             JSONRPCMessage::JSONRPCNotification(_notification) => {
@@ -236,165 +238,240 @@ impl MCPServer {
     async fn handle_request(
         &self,
         request: JSONRPCRequest,
-    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
-        match request.method.as_str() {
-            "tools/call" => {
-                let Some(params) = request.params else {
-                    return Ok(JsonrpcBatchResponseItem::JSONRPCError(JSONRPCError {
-                        error: JsonrpcErrorError {
-                            message: "No parameters provided".to_string(),
-                            code: error_codes::INVALID_PARAMS,
-                            data: None,
-                            extra: Default::default(),
-                        },
-                        id: request.id,
-                        jsonrpc: Default::default(),
-                        extra: Default::default(),
-                    }));
-                };
+    ) -> anyhow::Result<Option<JsonrpcBatchResponseItem>> {
+        let request_id = request.id;
+        let client_request = serde_json::from_value::<ClientRequest>(serde_json::json!({
+            "method": request.method,
+            "params": request.params,
+        }))?;
 
-                let tool_request = match serde_json::from_value::<CallToolRequestParams>(
-                    serde_json::Value::Object(params.extra),
-                ) {
-                    Ok(req) => req,
-                    Err(e) => {
-                        let result = CallToolResult {
-                            extra: Default::default(),
-                            meta: Default::default(),
-                            content: vec![CallToolResultContent::TextContent(TextContent {
-                                text: format!("Failed to parse tool call request: {}", e),
-                                r#type: Default::default(),
-                                annotations: Default::default(),
-                                extra: Default::default(),
-                            })],
-                            is_error: Some(true),
-                        };
-                        return Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
-                            id: request.id,
-                            jsonrpc: Default::default(),
-                            result: serialize_tool_call_result(result)?,
-                            extra: Default::default(),
-                        }));
-                    }
-                };
-
-                // Extract tool name from params
-                let tool_name = tool_request.name.as_str();
-
-                // Find the tool and execute it
-                if let Some(tool) = self.get_tool(tool_name) {
-                    // Execute the tool using the tool trait's execute method
-                    let result = tool
-                        .execute(CallToolRequest {
-                            method: Default::default(),
-                            params: tool_request,
-                            extra: request.extra,
-                        })
-                        .await;
-                    Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
-                        id: request.id,
-                        jsonrpc: Default::default(),
-                        result: serialize_tool_call_result(result)?,
-                        extra: Default::default(),
-                    }))
-                } else {
-                    // Tool not found, send error response
-                    Ok(JsonrpcBatchResponseItem::JSONRPCError(JSONRPCError {
-                        error: JsonrpcErrorError {
-                            message: format!("Tool not found: {}", tool_name),
-                            code: error_codes::INVALID_PARAMS,
-                            data: None,
-                            extra: Default::default(),
-                        },
-                        id: request.id,
-                        jsonrpc: Default::default(),
-                        extra: Default::default(),
-                    }))
-                }
-            }
-            "tools/list" => {
-                // Handle tool listing request
-                let tools = self
-                    .list_tools()
-                    .map(|tool| {
-                        Ok(serde_json::json!({
-                            "name": tool.name(),
-                            "description": tool.description(),
-                            "inputSchema": serde_json::from_str::<serde_json::Value>(tool.input_schema().as_ref())?,
-                            "annotations": tool.annotations()
-                        }))
-                    })
-                    .collect::<anyhow::Result<Vec<_>>>()?;
-
-                Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
-                    id: request.id,
-                    jsonrpc: Default::default(),
-                    result: mcp::Result {
-                        meta: Default::default(),
-                        extra: serde_json::json!({"tools": tools})
-                            .as_object()
-                            .unwrap()
-                            .clone(),
-                    },
-                    extra: Default::default(),
-                }))
-            }
-            "resources/list" => {
-                // Handle resource listing request
-                let resources = self
-                    .list_resources()
-                    .map(|resource| Ok(serde_json::to_value(resource)?))
-                    .collect::<anyhow::Result<Vec<_>>>()?;
-
-                Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
-                    id: request.id,
-                    jsonrpc: Default::default(),
-                    result: mcp::Result {
-                        meta: Default::default(),
-                        extra: serde_json::json!({"resources": resources})
-                            .as_object()
-                            .unwrap()
-                            .clone(),
-                    },
-                    extra: Default::default(),
-                }))
-            }
-            "prompts/list" => {
-                // Handle prompt listing request
-                let prompts = self
-                    .list_prompts()
-                    .map(|prompt| Ok(serde_json::to_value(prompt)?))
-                    .collect::<anyhow::Result<Vec<_>>>()?;
-
-                Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
-                    id: request.id,
-                    jsonrpc: Default::default(),
-                    result: mcp::Result {
-                        meta: Default::default(),
-                        extra: serde_json::json!({"prompts": prompts})
-                            .as_object()
-                            .unwrap()
-                            .clone(),
-                    },
-                    extra: Default::default(),
-                }))
-            }
-            // Handle other request types
-            _ => {
-                // Return method not found error
-                Ok(JsonrpcBatchResponseItem::JSONRPCError(JSONRPCError {
-                    error: JsonrpcErrorError {
-                        message: format!("Method not supported: {}", request.method),
-                        code: error_codes::METHOD_NOT_FOUND,
-                        data: None,
-                        extra: Default::default(),
-                    },
-                    id: request.id,
-                    jsonrpc: Default::default(),
-                    extra: Default::default(),
-                }))
-            }
+        match client_request {
+            ClientRequest::InitializeRequest(_) => Ok(None),
+            ClientRequest::PingRequest(ping_request) => self
+                .handle_ping_request(request_id, ping_request)
+                .await
+                .map(Some),
+            ClientRequest::ListResourcesRequest(list_resources_request) => self
+                .handle_list_resources_request(request_id, list_resources_request)
+                .await
+                .map(Some),
+            ClientRequest::ReadResourceRequest(read_resource_request) => self
+                .handle_read_resource_request(request_id, read_resource_request)
+                .await
+                .map(Some),
+            ClientRequest::SubscribeRequest(subscribe_request) => self
+                .handle_subscribe_request(request_id, subscribe_request)
+                .await
+                .map(Some),
+            ClientRequest::UnsubscribeRequest(unsubscribe_request) => self
+                .handle_unsubscribe_request(request_id, unsubscribe_request)
+                .await
+                .map(Some),
+            ClientRequest::ListPromptsRequest(list_prompts_request) => self
+                .handle_list_prompts_request(request_id, list_prompts_request)
+                .await
+                .map(Some),
+            ClientRequest::GetPromptRequest(get_prompt_request) => self
+                .handle_get_prompt_request(request_id, get_prompt_request)
+                .await
+                .map(Some),
+            ClientRequest::ListToolsRequest(list_tools_request) => self
+                .handle_list_tools_request(request_id, list_tools_request)
+                .await
+                .map(Some),
+            ClientRequest::CallToolRequest(call_tool_request) => self
+                .handle_call_tool_request(request_id, call_tool_request)
+                .await
+                .map(Some),
+            ClientRequest::SetLevelRequest(set_level_request) => self
+                .handle_set_level_request(request_id, set_level_request)
+                .await
+                .map(Some),
+            ClientRequest::CompleteRequest(complete_request) => self
+                .handle_complete_request(request_id, complete_request)
+                .await
+                .map(Some),
         }
+    }
+
+    async fn handle_ping_request(
+        &self,
+        request_id: RequestId,
+        _request: PingRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        let extra = serde_json::json!({
+            "message": "pong"
+        })
+        .as_object()
+        .unwrap()
+        .clone();
+
+        Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+            id: request_id,
+            jsonrpc: Default::default(),
+            result: mcp::Result {
+                meta: Default::default(),
+                extra,
+            },
+            extra: Default::default(),
+        }))
+    }
+
+    async fn handle_list_resources_request(
+        &self,
+        request_id: RequestId,
+        _request: ListResourcesRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        let resources = self
+            .list_resources()
+            .map(|resource| Ok(serde_json::to_value(resource)?))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+
+        Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+            id: request_id,
+            jsonrpc: Default::default(),
+            result: mcp::Result {
+                meta: Default::default(),
+                extra: serde_json::json!({"resources": resources})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            },
+            extra: Default::default(),
+        }))
+    }
+
+    async fn handle_read_resource_request(
+        &self,
+        _request_id: RequestId,
+        _request: ReadResourceRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        todo!()
+    }
+
+    async fn handle_subscribe_request(
+        &self,
+        _request_id: RequestId,
+        _request: SubscribeRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        todo!()
+    }
+
+    async fn handle_unsubscribe_request(
+        &self,
+        _request_id: RequestId,
+        _request: UnsubscribeRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        todo!()
+    }
+
+    async fn handle_list_prompts_request(
+        &self,
+        request_id: RequestId,
+        _request: ListPromptsRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        let prompts = self
+            .list_prompts()
+            .map(|prompt| Ok(serde_json::to_value(prompt)?))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+
+        Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+            id: request_id,
+            jsonrpc: Default::default(),
+            result: mcp::Result {
+                meta: Default::default(),
+                extra: serde_json::json!({"prompts": prompts})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            },
+            extra: Default::default(),
+        }))
+    }
+
+    async fn handle_get_prompt_request(
+        &self,
+        _request_id: RequestId,
+        _request: GetPromptRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        todo!()
+    }
+
+    async fn handle_list_tools_request(
+        &self,
+        request_id: RequestId,
+        _request: ListToolsRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        let tools = self
+            .list_tools()
+            .map(|tool| {
+                Ok(serde_json::json!({
+                    "name": tool.name(),
+                    "description": tool.description(),
+                    "inputSchema": serde_json::from_str::<serde_json::Value>(tool.input_schema().as_ref())?,
+                    "annotations": tool.annotations()
+                }))
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?;
+
+        Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+            id: request_id,
+            jsonrpc: Default::default(),
+            result: mcp::Result {
+                meta: Default::default(),
+                extra: serde_json::json!({"tools": tools})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            },
+            extra: Default::default(),
+        }))
+    }
+
+    async fn handle_call_tool_request(
+        &self,
+        request_id: RequestId,
+        request: CallToolRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        let tool_name = request.params.name.as_str();
+
+        if let Some(tool) = self.get_tool(tool_name) {
+            let result = tool.execute(request).await;
+            Ok(JsonrpcBatchResponseItem::JSONRPCResponse(JSONRPCResponse {
+                id: request_id,
+                jsonrpc: Default::default(),
+                result: serialize_tool_call_result(result)?,
+                extra: Default::default(),
+            }))
+        } else {
+            Ok(JsonrpcBatchResponseItem::JSONRPCError(JSONRPCError {
+                error: JsonrpcErrorError {
+                    message: format!("Tool not found: {}", tool_name),
+                    code: error_codes::INVALID_PARAMS,
+                    data: None,
+                    extra: Default::default(),
+                },
+                id: request_id,
+                jsonrpc: Default::default(),
+                extra: Default::default(),
+            }))
+        }
+    }
+
+    async fn handle_set_level_request(
+        &self,
+        _request_id: RequestId,
+        _request: SetLevelRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        todo!()
+    }
+
+    async fn handle_complete_request(
+        &self,
+        _request_id: RequestId,
+        _request: CompleteRequest,
+    ) -> anyhow::Result<JsonrpcBatchResponseItem> {
+        todo!()
     }
 
     async fn handle_batch_request<S: RPCSink>(
