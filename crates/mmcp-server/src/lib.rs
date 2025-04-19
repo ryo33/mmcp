@@ -220,8 +220,8 @@ impl MCPServer {
                 };
                 sink.send_message(message).await?;
             }
-            JSONRPCMessage::JSONRPCNotification(_notification) => {
-                // TODO
+            JSONRPCMessage::JSONRPCNotification(notification) => {
+                self.handle_notification(notification).await?;
             }
             JSONRPCMessage::JSONRPCBatchRequest(batch) => {
                 self.handle_batch_request(sink, batch).await?;
