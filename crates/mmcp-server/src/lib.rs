@@ -1,27 +1,26 @@
 pub mod inventory;
-mod notification_handlers;
 pub mod primitives;
-mod request_handlers;
+mod runtime;
 
+use anyhow::{Context as _, anyhow};
+use mmcp_protocol::{
+    ProtocolVersion,
+    mcp::{
+        self, CallToolResult, Implementation, InitializeRequest, InitializeResult, JSONRPCMessage,
+        RequestId, ServerCapabilities, ServerCapabilitiesPrompts, ServerCapabilitiesResources,
+        ServerCapabilitiesTools,
+    },
+    port::{RPCPort, RPCSink},
+};
 use std::{borrow::Cow, collections::BTreeMap};
 
 use crate::{
     inventory::ToolRegistration,
     primitives::tool::{BoxedTool, Tool},
-};
-use anyhow::{Context as _, anyhow};
-use futures::{StreamExt as _, TryStreamExt as _};
-use mmcp_protocol::{
-    ProtocolVersion,
-    mcp::{
-        self, CallToolResult, Implementation, InitializeRequest, InitializeResult,
-        JSONRPCBatchRequest, JSONRPCBatchResponse, JSONRPCMessage, JsonrpcBatchRequestItem,
-        JsonrpcBatchResponseItem, RequestId, ServerCapabilities, ServerCapabilitiesPrompts,
-        ServerCapabilitiesResources, ServerCapabilitiesTools,
-    },
-    port::{RPCPort, RPCSink},
+    runtime::MCPServerRuntime,
 };
 
+/// MCP Server implementation with builder pattern for configuration
 pub struct MCPServer {
     name: String,
     version: String,
@@ -47,8 +46,9 @@ impl MCPServer {
         self
     }
 
-    pub fn add_tool(&mut self, tool: impl Tool + Send + Sync + 'static) {
+    pub fn add_tool(mut self, tool: impl Tool + Send + Sync + 'static) -> Self {
         self.tools.insert(tool.name(), Box::new(tool));
+        self
     }
 
     pub fn get_tool(&self, name: &str) -> Option<&BoxedTool> {
@@ -77,25 +77,11 @@ impl MCPServer {
         self
     }
 
-    /// Start the server by initializing and then processing requests
-    pub async fn start<P: RPCPort>(self, mut port: P) -> anyhow::Result<()> {
-        // Create a single sink to use throughout the lifecycle
-        let mut sink = port.sink();
-
-        // First handle initialization
-        let queued_messages = self.initialize(&mut port, &mut sink).await?;
-
-        // Process any messages queued during initialization
-        for message in queued_messages {
-            self.handle_message(&mut sink, message).await?;
-        }
-
-        // Main message processing loop
-        while let Ok(Some(message)) = port.progress().await {
-            self.handle_message(&mut sink, message).await?;
-        }
-
-        Ok(())
+    /// Start the server by transforming into runtime, then run
+    pub async fn start<P: RPCPort>(self, port: P) -> anyhow::Result<()> {
+        let sink = port.sink();
+        let runtime = MCPServerRuntime::new(self, sink.clone());
+        runtime.run(port).await
     }
 
     /// Handle the initialization process
@@ -195,64 +181,7 @@ impl MCPServer {
             },
             extra: Default::default(),
         };
-
-        // Send response
         sink.send_response(id, response).await?;
-
-        Ok(())
-    }
-
-    /// Handle a single message from the client
-    async fn handle_message<S: RPCSink>(
-        &self,
-        sink: &mut S,
-        message: JSONRPCMessage,
-    ) -> anyhow::Result<()> {
-        match message {
-            JSONRPCMessage::JSONRPCRequest(request) => {
-                let message = match self.handle_request(request).await? {
-                    JsonrpcBatchResponseItem::JSONRPCResponse(response) => {
-                        JSONRPCMessage::JSONRPCResponse(response)
-                    }
-                    JsonrpcBatchResponseItem::JSONRPCError(error) => {
-                        JSONRPCMessage::JSONRPCError(error)
-                    }
-                };
-                sink.send_message(message).await?;
-            }
-            JSONRPCMessage::JSONRPCNotification(notification) => {
-                self.handle_notification(notification).await?;
-            }
-            JSONRPCMessage::JSONRPCBatchRequest(batch) => {
-                self.handle_batch_request(sink, batch).await?;
-            }
-            _ => {}
-        }
-
-        Ok(())
-    }
-
-    async fn handle_batch_request<S: RPCSink>(
-        &self,
-        sink: &mut S,
-        batch: JSONRPCBatchRequest,
-    ) -> anyhow::Result<()> {
-        let message = futures::stream::iter(batch.0)
-            .filter_map(|request| async move {
-                match request {
-                    JsonrpcBatchRequestItem::JSONRPCRequest(request) => {
-                        Some(self.handle_request(request))
-                    }
-                    JsonrpcBatchRequestItem::JSONRPCNotification(_) => None,
-                }
-            })
-            .buffered(10)
-            .try_collect::<Vec<_>>()
-            .await?;
-        sink.send_message(JSONRPCMessage::JSONRPCBatchResponse(JSONRPCBatchResponse(
-            message,
-        )))
-        .await?;
         Ok(())
     }
 }

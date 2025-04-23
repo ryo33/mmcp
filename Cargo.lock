@@ -533,6 +533,7 @@ dependencies = [
  "mmcp-rpc",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
