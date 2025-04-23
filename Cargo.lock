@@ -467,6 +467,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mmcp-calc"
+version = "0.1.0"
+dependencies = [
+ "mmcp",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "mmcp-client"
 version = "0.1.0"
 dependencies = [

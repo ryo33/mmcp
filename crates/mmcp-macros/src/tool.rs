@@ -201,7 +201,7 @@ fn generate_input_schema(tool_name: &Ident, input: &ItemFn) -> Result<InputSchem
         #[serde(crate = "::mmcp::serde")]
         #[schemars(crate = "::mmcp::schemars")]
         pub struct #struct_name {
-            #(#fields)*
+            #(#fields,)*
         }
     };
 

@@ -1,0 +1,10 @@
+[package]
+name = "mmcp-calc"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mmcp = { workspace = true, features = ["server-stdio"] }
+uuid = { version = "1", features = ["v4"] }
+tokio = { workspace = true, features = ["full"] }
